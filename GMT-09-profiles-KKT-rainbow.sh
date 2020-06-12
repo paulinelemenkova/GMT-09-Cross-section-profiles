@@ -1,0 +1,145 @@
+#!/bin/sh
+# Purpose: Generating and plotting stacked cross-sectioning bathymetric profiles
+# Area: along the track of the Kuril-Kamchatka Trench
+# Profiles info: 400 km long, spaced 10 km, sampled every 2km
+# # GMT modules: grdcut, makecpt, grdimage, psscale, grdcontour, psbasemap, psxy, grdtrack, convert, pstext, logo, psconvert
+# Unix progs: echo, rm, cat
+# Step-1. Generate a file
+ps=crossRAIN.ps
+# Step-2. GMT set up
+gmt set FORMAT_GEO_MAP=dddF \
+    MAP_FRAME_PEN=dimgray \
+    MAP_FRAME_WIDTH=0.1c \
+    MAP_TITLE_OFFSET=0.5c \
+    MAP_ANNOT_OFFSET=0.2c \
+    MAP_TICK_PEN_PRIMARY=thinner,dimgray \
+    MAP_GRID_PEN_PRIMARY=thin,dimgray \
+    MAP_GRID_PEN_SECONDARY=thinnest,dimgray \
+    FONT_TITLE=12p,Palatino-Roman,black \
+    FONT_ANNOT_PRIMARY=10p,Palatino-Roman,dimgray \
+    FONT_LABEL=10p,Palatino-Roman,dimgray \
+# Step-3. Overwrite defaults of GMT
+gmtdefaults -D > .gmtdefaults
+# Step-4. Extract a subset of ETOPO1m for the Kuril-Kamchatka Trench area
+grdcut earth_relief_01m.grd -R140/170/40/60 -Gkkt_relief.nc
+# Step-5. Make color palette
+#gmt makecpt -Cglobe.cpt -V -T-10000/1000 > myocean.cpt
+gmt makecpt -Crainbow -V -T-10000/1000/500 -Z > myocean.cpt
+# Step-6. Make raster image
+gmt grdimage kkt_relief.nc -Cmyocean.cpt -R140/170/40/60 -JM15c -Y-1.5c \
+    -P -I+a15+ne0.75 -Xc -K > $ps
+# Step-7. Add color legend
+gmt psscale -Dg134/40+w6.5i/0.15i+v+o0.3/0i+ml -Rkkt_relief.nc -J -Cmyocean.cpt \
+	--FONT_LABEL=9p,Helvetica,dimgray \
+	--FONT_ANNOT_PRIMARY=7p,Helvetica,dimgray \
+	-Baf+l"Color scale legend: depth and height elevations (m)" \
+	-I0.2 -By+lm -O -K >> $ps
+# Step-8. Add shorelines
+gmt grdcontour kkt_relief.nc -R -J -C1000 -W0.5p \
+    -B+t"Cross-sectional profiles of the Kuril-Kamchatka Trench" \
+    -O -K >> $ps
+# Step-9. Add grid
+gmt psbasemap -R -J \
+	-Lx5.3i/-0.5i+c50+w500k+l"Mercator projection. Scale (km)"+f \
+	-Bxg4f2a4 -Byg4f2a4 \
+    --MAP_TITLE_OFFSET=0.3c \
+    --FONT=10p,Palatino-Roman,dimgray \
+    -Tdx0.7c/13.3c+w0.3i+f2+l+o0.15i \
+	-UBL/-15p/-35p -O -K >> $ps
+# annotation
+echo "141.0 41.0 C" | gmt pstext -R -J -F+jBL+f20p,black -Gfloralwhite -W0.5p -O -K >> $ps
+#
+# NORTHERN segment
+# Step-10. Select two points along the Kuril-Kamchatka Trench
+cat << EOF > trench2.txt
+153.5 45.5
+158.5 50.0
+EOF
+# Step-11. Plot trench segment and end points
+gmt psxy -Rkkt_relief.nc -J -W2p,red trench2.txt -O -K >> $ps # my line
+gmt psxy -R -J -Sc0.15i -Gred trench2.txt -O -K >> $ps # points
+# Step-12. Generate cross-track profiles 400 km long, spaced 20 km, sampled every 2km
+# and stack these using the median, write stacked profile
+gmt grdtrack trench2.txt -Gkkt_relief.nc -C400k/2k/10k+v -Sa+sstack2.txt > table2.txt
+# Step-13. Generate cross-track profiles 400 km long, spaced 20 km, sampled every 2km
+# and stack these using the mean, write stacked profile
+gmt psxy -R -J -W0.5p table2.txt -O -K >> $ps
+# Step-14. Show upper/lower values encountered as an envelope
+gmt convert stack2.txt -o0,5 > env2.txt
+gmt convert stack2.txt -o0,6 -I -T >> env2.txt
+#
+# SOUTHERN segment
+# Step-11. Plot trench segment and end points
+cat << EOF > trench1.txt
+148.0 43.0
+153.5 45.5
+EOF
+gmt psxy -Rkkt_relief.nc -J -W2p,red trench1.txt -O -K >> $ps # my line
+gmt psxy -R -J -Sc0.15i -Gred trench1.txt -O -K >> $ps # points
+# Step-12. Generate cross-track profiles 400 km long, spaced 20 km, sampled every 2km
+# and stack these using the mean, write stacked profile
+gmt grdtrack trench1.txt -Gkkt_relief.nc -C400k/2k/10k -Sa+sstack1.txt > table1.txt
+gmt psxy -R -J -W0.5p table1.txt -O -K >> $ps
+# Step-13. Show upper/lower values encountered as an envelope
+gmt convert stack1.txt -o0,5 > env1.txt
+gmt convert stack1.txt -o0,6 -I -T >> env1.txt
+#
+# NORTHERN graph
+# Step-15. Plot graph
+gmt psxy -R-200/200/-10000/2000 -JX15.2c/5c -Y19.0c \
+    -Bxag100f50+l"Distance from trench (km)" \
+    -Byag2000f1000a2000+l"Depth (m)" \
+    --FONT_ANNOT_PRIMARY=9p,Palatino-Roman,dimgray \
+    --MAP_GRID_PEN_PRIMARY=thinner,dimgray \
+    --FONT_LABEL=10p,Palatino-Roman,dimgray -BWESN \
+	-Glightgray -W0.5p env2.txt -O -K >> $ps
+gmt psxy -R -J -W1.0p -Ey+p0.2p stack2.txt -O -K >> $ps
+gmt psxy -R -J -W1p,red stack2.txt -O -K >> $ps
+# Step-16. Add test annotations
+echo "-50 1000 Mean stacked profile with error bars: northern segment" | gmt pstext -R -J \
+-Gwhite -F+jBL+f12p,Times-Roman,red -O -K >> $ps
+echo "-50 0 Profiles 400 km long, spaced 20 km, sampled 2km" | gmt pstext -R -J -Gwhite -F+jBL+f12p,red -O -K >> $ps
+echo "-150 -4500 Greater Kuril Chain" | gmt pstext -R -J -Gwhite -F+jTC+f11p,darkbrown -O -K >> $ps
+echo "150 -7000 Pacific Plate" | gmt pstext -R -J -Gwhite -F+jTC+f12p,darkbrown -O -K >> $ps
+echo "150 -3000 Pacific Ocean" | gmt pstext -R -J -Gwhite -F+jTC+f12p,darkblue -O -K >> $ps
+echo "-95 -5200 Oceanward Forearc" | gmt pstext -R -J -F+jBL+f11p,darkbrown+a-35 -Gwhite -O -K >> $ps
+echo "-25 -1500 Kuril-Kamchatka Trench" | gmt pstext -R -J -F+f11p,orangered4+jBL -Gwhite -O -K >> $ps
+echo "-190 -9000 B" | gmt pstext -R -J -F+jBL+f18p,black -Gfloralwhite -W0.5p -O -K >> $ps
+# Step-17. Arrow
+gmt psxy -R -J -Sv0.15i+bc+ea -Gyellow -W0.5p -O -K << EOF >> $ps
+3 -2000 270 1.7c
+EOF
+#
+# SOUTHERN graph
+# Step-14. Plot graph
+gmt psxy -R-200/200/-10000/2000 -JX15.2c/5c -Y7.0c \
+    -Bxag100f50+l"Distance from trench (km)" \
+    -Byag2000f1000a2000+l"Depth (m)" \
+    --FONT_ANNOT_PRIMARY=9p,Palatino-Roman,dimgray \
+    --MAP_GRID_PEN_PRIMARY=thinner,dimgray \
+    --FONT_LABEL=10p,Palatino-Roman,dimgray -BWESN \
+    -Glightgray -W0.5p env1.txt -O -K >> $ps
+gmt psxy -R -J -W1.0p -Ey+p0.2p stack1.txt -O -K >> $ps
+gmt psxy -R -J -W1.0p,red stack1.txt -O -K >> $ps
+# Step-15. Add test annotations
+echo "-80 500 Profiles 400 km long, spaced 20 km, sampled 2km" | gmt pstext -R -J \
+    -Gwhite -F+jBL+f12p,Times-Roman,red -O -K >> $ps
+echo "-80 -500 Mean stacked profile with error bars: southern segment" | gmt pstext -R -J -Gwhite -F+jBL+f12p,red -O -K >> $ps
+echo "-150 -4000 Greater Kuril Chain" | gmt pstext -R -J -Gwhite -F+jTC+f11p,darkbrown -O -K >> $ps
+echo "150 -7000 Pacific Plate" | gmt pstext -R -J -Gwhite -F+jTC+f12p,darkbrown -O -K >> $ps
+echo "150 -3000 Pacific Ocean" | gmt pstext -R -J -Gwhite -F+jTC+f12p,darkblue -O -K >> $ps
+echo "-100 -4800 Oceanward Forearc" | gmt pstext -R -J -F+jTL+f11p,darkbrown+a-35 -Gwhite -O -K >> $ps
+echo "-50 -2500 Kuril-Kamchatka Trench" | gmt pstext -R -J -F+f11p,orangered4+jBL -Gwhite -O -K >> $ps
+echo "-190 -9000 A" | gmt pstext -R -J -F+jBL+f18p,black -Gfloralwhite -W0.5p -O -K >> $ps
+# Arrow
+gmt psxy -R -J -Sv0.15i+bc+ea -Gyellow -W0.5p -O -K << EOF >> $ps
+3 -2800 270 2.0c
+EOF
+#
+# Add GMT logo
+gmt logo -Dx6.5/-28.0+w2c -O >> $ps
+# gmt psxy -R -J -O -T >> $ps
+# Clean up (not necessary in this case)
+# rm -f z.cpt ridge.txt table.txt env.txt stack.txt
+# Convert to image file using GhostScript (portrait orientation, 720 dpi)
+gmt psconvert crossRAIN.ps -A3.8c -E720 -Tj -P -Z
