@@ -38,7 +38,7 @@ gmt grdimage sst_relief.nc -CmyoceanSST.cpt -R320/340/-63/-53 -JM6i \
 # Add color legend
 gmt psscale -Dg316.6/-63+w14.3c/0.4c+v+o0.3/0i+ml -Rsst_relief.nc -J -CmyoceanSST.cpt \
 	--FONT_LABEL=8p,Helvetica,dimgray \
-	--FONT_ANNOT_PRIMARY=5p,Helvetica,dimgray \
+	--FONT_ANNOT_PRIMARY=6p,Helvetica,black \
 	-Baf+l"Color scale: elevation. Washed-out colors for topography [R=-8239/2565, C=RGB]" \
     --MAP_TITLE_OFFSET=0.5c \
 	-I0.2 -By+lm -O -K >> $ps
@@ -54,14 +54,13 @@ gmt psbasemap -R -J \
 echo "338.7 -53.5 B" | gmt pstext -R -J -F+jTL+f20p,black -Gfloralwhite -W0.5p -O -K >> $ps
 # Step-8. Add shorelines
 gmt grdcontour sst_relief.nc -R -J -C1000 \
-    -B+t"Cross-sectional profiles of the South Sandwich Trench, Scotia Sea. DEM: GEBCO" \
+    -B+t"Cross-sectional profiles of the South Sandwich Trench (GEBCO Compilation Group, 2020)" \
     --MAP_TITLE_OFFSET=0.5c \
     -W0.1p -O -K >> $ps
     
 # Select two points along the South Sandwich Trench
 cat << EOF > trenchSST.txt
 335.0 -56.0
-#336.4 -58.2
 336.5 -58.2
 EOF
 
@@ -96,9 +95,12 @@ gmt psxy -R -J -W1.0p -Ey+p0.2p stackSST.txt -O -K >> $ps
 gmt psxy -R -J -W1.0p,red stackSST.txt -O -K >> $ps
 
 # Add test annotations
-echo "25 -2500 Median stacked profile with error bars" | gmt pstext -R -J -Gwhite -F+jBL+f10p,red -O -K >> $ps
-echo "-100 -7000 Scotia Plate " | gmt pstext -R -J -F+jBL+f10p,orangered4 -Gwhite -O -K >> $ps
-echo "5 -800 South Sandwich Trench" | gmt pstext -R -J -F+f10p,orangered4+jBL -Gwhite -O -K >> $ps
+echo "10 -500 Median stacked profile: red line" | gmt pstext -R -J -Gwhite -F+jBL+f9p,red -O -K >> $ps
+echo "10 -1500 Error bars: grey vertical lines" | gmt pstext -R -J -Gwhite -F+jBL+f9p,red -O -K >> $ps
+echo "10 -2500 Upper/lower values: max/min envelope" | gmt pstext -R -J -Gwhite -F+jBL+f9p,red -O -K >> $ps
+
+echo "-130 -7000 South Sandwich Plate " | gmt pstext -R -J -F+jBL+f10p,orangered4 -Gwhite -O -K >> $ps
+echo "-80 -800 South Sandwich Trench" | gmt pstext -R -J -F+f10p,orangered4+jBL -Gwhite -O -K >> $ps
 echo "50 -7000 South American Plate" | gmt pstext -R -J -F+jBL+f10p,orangered4 -Gwhite -O -K >> $ps
 echo "130 -500 A" | gmt pstext -R -J -F+jTL+f18p,black -Gfloralwhite -W0.5p -O -K >> $ps
 
