@@ -38,8 +38,8 @@ gmt grdimage ct1_relief.nc -CmyoceanCT.cpt -R228/238/47/52 -JM6i \
     
 # Add color legend
 gmt psscale -Dg316.6/-63+w14.3c/0.4c+v+o0.3/0i+ml -Rct1_relief.nc -J -CmyoceanCT.cpt \
-	--FONT_LABEL=8p,Helvetica,dimgray \
-	--FONT_ANNOT_PRIMARY=5p,Helvetica,dimgray \
+	--FONT_LABEL=8p,Helvetica,black \
+	--FONT_ANNOT_PRIMARY=8p,Helvetica,black \
 	-Baf+l"Color scale: elevation. Washed-out colors for topography [R=-8239/2565, C=RGB]" \
     --MAP_TITLE_OFFSET=0.5c \
 	-I0.2 -By+lm -O -K >> $ps
@@ -48,7 +48,7 @@ gmt psscale -Dg316.6/-63+w14.3c/0.4c+v+o0.3/0i+ml -Rct1_relief.nc -J -CmyoceanCT
 gmt psbasemap -R -J \
     -Lx13.0c/-0.5i+c50+w300k+l"Mercator projection. Scale (km)"+f \
     -Bpxg4f1a2 -Bpyg6f1a1 -Bsxg2 -Bsyg1 \
-    --FONT=8p,Palatino-Roman,dimgray \
+    --FONT=8p,Helvetica,black \
     -UBL/-15p/-35p -O -K >> $ps
     
 # annotation
@@ -59,22 +59,10 @@ gmt grdcontour ct1_relief.nc -R -J -C1000 \
     --MAP_TITLE_OFFSET=0.5c \
     -W0.1p -O -K >> $ps
     
-# Select two points along the South Sandwich Trench
+# Select two points
 cat << EOF > trenchCT.txt
-#228
 231.2 50.4
-#231.4 50.2
-#231.5 50.1
-#231.4 49.9
-#231.8 49.9
-#232.0 49.6
 233.0 48.3
-#233.2 48.4
-#233.1 48.4
-#233.0 48.5
-#233.3 48.3
-#232.9 48.3
-#233.3 48.2
 EOF
 
 # Step-12. Plot trench segment and end points
@@ -97,11 +85,11 @@ gmt psxy -R-150/150/-3500/2500 -JX15.2c/5c -Y14.5c envCT.txt -W0.5p \
     -Bpxag100f10+l"Distance from trench (km)"\
     -Bpya1000gf+l"Depth (m)" \
     -Bsxg50 -Bsyg1000 \
-    --FONT_ANNOT_PRIMARY=9p,Palatino-Roman,dimgray \
+    --FONT_ANNOT_PRIMARY=9p,Helvetica,black \
     --MAP_LABEL_OFFSET=0.1c \
     --MAP_GRID_PEN_PRIMARY=thinner,dimgray \
     --MAP_GRID_PEN_SECONDARY=thinnest,dimgray \
-    --FONT_LABEL=10p,Palatino-Roman,dimgray -BWeSn \
+    --FONT_LABEL=10p,Helvetica,black -BWeSn \
 	-Glightgray -O -K >> $ps
     
 gmt psxy -R -J -W1.0p -Ey+p0.2p stackCT.txt -O -K >> $ps
